@@ -6,6 +6,7 @@ const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
+require("dotenv").config()
 
 
 // Import models
@@ -40,11 +41,19 @@ const validateTeamHead = (req, res, next) => {
   app.post('/api/teamHead/create', validateTeamHead, async (req, res) => {
     try {
       const { username, password, email } = req.body;
+      
       const existingTeamHead = await TeamHead.findOne({ $or: [{ username }, { email }] });
       if (existingTeamHead) {
         return res.status(400).json({ message: 'Username or email already exists' });
       }
-      const newTeamHead = new TeamHead({ username, password, email });
+  
+      // Hash the password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+  
+      // Use the hashed password when creating a new TeamHead
+      const newTeamHead = new TeamHead({ username, password: hashedPassword, email });
+  
       await newTeamHead.save();
       res.status(201).json({ message: 'TeamHead created successfully' });
     } catch (error) {
@@ -52,6 +61,7 @@ const validateTeamHead = (req, res, next) => {
       res.status(500).json({ message: 'Internal Server Error' });
     }
   });
+  
   
 
 
@@ -152,7 +162,7 @@ app.post('/api/teamHead/createEmployee', async (req, res) => {
 
   app.get('/api/teamHead/records', async (req, res) => {
     const { startDate, endDate } = req.query;
-  
+    
     const query = {};
   
     if (startDate && endDate) {
@@ -163,7 +173,7 @@ app.post('/api/teamHead/createEmployee', async (req, res) => {
     }
   
     const records = await PunchRecord.find(query).populate('employeeId');
-  
+    console.log(startDate, endDate);
     res.json(records);
   });
   
