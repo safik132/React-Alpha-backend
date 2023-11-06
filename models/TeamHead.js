@@ -14,7 +14,20 @@ const TeamHeadSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true
-  }
+  },
+  superAdminId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TeamHead'
+    
+  },
+  role: {
+    type: String,
+    enum: ['teamHead', 'superAdmin'],
+    
+}
+
+
+
 });
 
 module.exports = mongoose.model('TeamHead', TeamHeadSchema);

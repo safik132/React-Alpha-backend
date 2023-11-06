@@ -18,8 +18,15 @@ const EmployeeSchema = new mongoose.Schema({
   teamHeadId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'TeamHead',
-    required: true
-  }
+    
+  },
+  // Add role field
+  role: {
+    type: String,
+    enum: ['employee'],
+    
+}
+
 });
 
 module.exports = mongoose.model('Employee', EmployeeSchema);
