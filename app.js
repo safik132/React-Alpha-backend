@@ -18,6 +18,7 @@ const app = express();
 const userRoleMapping = {
   "employee": "employee",
   "teamHead": "teamHead",
+  "superAdmin": "superAdmin"
   // ... any other roles you add in the future
 }
 
