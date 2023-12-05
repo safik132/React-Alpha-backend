@@ -164,8 +164,8 @@ const validateTeamHead = (req, res, next) => {
         punchIn: dateObj,
         loggedInAt: new Date(loggedInAt),
         location: {
-          lat: req.body.lat,
-          lon: req.body.lon  
+          lat, 
+          lon
         } 
       });
       await newRecord.save();
