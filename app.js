@@ -163,11 +163,11 @@ const validateTeamHead = (req, res, next) => {
         formattedDate: formattedDate,
         punchIn: dateObj,
         loggedInAt: new Date(loggedInAt),
-        location: {
-          lat, 
-          lon
-        } 
+        lat, 
+        lon
+        
       });
+      console.log(newRecord)
       await newRecord.save();
     } else if (type === 'out') {
       const record = await PunchRecord.findOne({
