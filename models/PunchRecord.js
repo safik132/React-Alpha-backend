@@ -22,6 +22,10 @@ const PunchRecordSchema = new mongoose.Schema({
     type: Date,
     required: false // You may want to set this when the user logs in
   },
+  location: {
+    lat: { type: Number, required: false },
+    lon: { type: Number, required: false }
+  },
   formattedDate: {
     type: String,
   },

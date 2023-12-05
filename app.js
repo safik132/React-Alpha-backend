@@ -147,7 +147,7 @@ const validateTeamHead = (req, res, next) => {
   
 
   app.post('/api/employee/punch', async (req, res) => {
-    const { type, employeeId, loggedInAt } = req.body; 
+    const { type, employeeId, loggedInAt, lat, lon } = req.body; 
   
     if (!type || !employeeId) {
       return res.status(400).json({ message: 'Missing required fields' });
@@ -163,6 +163,10 @@ const validateTeamHead = (req, res, next) => {
         formattedDate: formattedDate,
         punchIn: dateObj,
         loggedInAt: new Date(loggedInAt),
+        location: {
+          lat: req.body.lat,
+          lon: req.body.lon  
+        } 
       });
       await newRecord.save();
     } else if (type === 'out') {
