@@ -42,7 +42,7 @@ const validateTeamHead = (req, res, next) => {
     }
     next();
   };
-  
+  {/*----------------------------------------------------------------------- */}
   // Updated /api/teamHead/create endpoint
   app.post('/api/teamHead/create', validateTeamHead, async (req, res) => {
     try {
@@ -74,47 +74,61 @@ const validateTeamHead = (req, res, next) => {
     }
   });
   
-
-  app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
-  
-    // Check TeamHead collection first
-    let user = await TeamHead.findOne({ email });
-  
-    let role; // Declare role without assigning yet
-    if (user) {
-      role = user.role; // Assign role based on database value (either "teamHead" or "superAdmin")
-    } else {
-      // If not found in TeamHead, check Employee collection
-      user = await Employee.findOne({ email });
+{/*----------------------------------------------------------------------- */}
+    app.post('/api/login', async (req, res) => {
+      const { email, password } = req.body;
+    
+      // Check TeamHead collection first
+      let user = await TeamHead.findOne({ email });
+    
+      let role; // Declare role without assigning yet
       if (user) {
-        role = "employee";
+        role = user.role; // Assign role based on database value (either "teamHead" or "superAdmin")
+      } else {
+        // If not found in TeamHead, check Employee collection
+        user = await Employee.findOne({ email });
+        if (user) {
+          role = "employee";
+        }
       }
-    }
-  
-    if (!user) {
-      return res.status(401).json({ message: 'User not found' });
-    }
-  
-    // Compare entered password with stored hashed password
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(401).json({ message: 'Invalid password' });
-    }
-  
-    // Generate token
-    const token = jwt.sign({ id: user._id, role }, 'your_secret_key', { expiresIn: '1h' });
-  
-    // Include user's ID in the response
-    res.json({ message: 'Logged in successfully', token, userId: user._id, role: role, username: user.username });
-  });
+    
+      if (!user) {
+        return res.status(401).json({ message: 'User not found' });
+      }
+    
+      // Compare entered password with stored hashed password
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ message: 'Invalid password' });
+      }
+    
+      // Generate token
+      const token = jwt.sign({ id: user._id, role }, 'your_secret_key', { expiresIn: '1h' });
+    
+      // Prepare response object
+      let response = {
+        message: 'Logged in successfully',
+        token,
+        userId: user._id,
+        role: role,
+        username: user.username
+      };
+
+  // Add lat and lon for employee role
+      if (role === "employee" && user.lat && user.lon) {
+        response.lat = user.lat;
+        response.lon = user.lon;
+      }
+
+      res.json(response);
+    });
   
   
 
-
+{/*----------------------------------------------------------------------- */}
 
   app.post('/api/teamHead/createEmployee', async (req, res) => {
-    const { username, password, email, teamHeadId, userType } = req.body;
+    const { username, password, email, teamHeadId, userType ,lat, lon} = req.body;
   
     // Basic validation
     if (!username || !password || !email || !teamHeadId) {
@@ -132,7 +146,9 @@ const validateTeamHead = (req, res, next) => {
       password: hashedPassword,
       email,
       teamHeadId,
-      role: role
+      role: role,
+      lat,
+      lon
     });
   
     try {
@@ -143,9 +159,23 @@ const validateTeamHead = (req, res, next) => {
       res.status(500).json({ message: 'Internal Server Error' });
     }
   });
+  {/*----------------------------------------------------------------------- */}
+  app.patch('/api/employee/updateLocation/:id', async (req, res) => {
+    const { lat, lon } = req.body;
+    try {
+      const updatedEmployee = await Employee.findByIdAndUpdate(
+        req.params.id, 
+        { $set: { lat, lon } }, // Corrected update object
+        { new: true }
+      );
+      res.json(updatedEmployee);
+    } catch (error) {
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  });
   
   
-
+{/*----------------------------------------------------------------------- */}
   app.post('/api/employee/punch', async (req, res) => {
     const { type, employeeId, loggedInAt, lat, lon } = req.body; 
   
@@ -184,7 +214,7 @@ const validateTeamHead = (req, res, next) => {
     res.json({ message: 'Punch recorded successfully' });
   });
   
-
+{/*----------------------------------------------------------------------- */}
   app.get('/api/teamHead/records', async (req, res) => {
     const { startDate, endDate, userId, role } = req.query;
   
@@ -223,7 +253,7 @@ const validateTeamHead = (req, res, next) => {
     return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
   };
   
-
+{/*----------------------------------------------------------------------- */}
   
   app.get('/api/employee/lastPunch', async (req, res) => {
     const { employeeId } = req.query;

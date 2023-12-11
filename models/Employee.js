@@ -25,7 +25,9 @@ const EmployeeSchema = new mongoose.Schema({
     type: String,
     enum: ['employee'],
     
-}
+},
+lat: { type: Number, required: false },
+lon: { type: Number, required: false },
 
 });
 
