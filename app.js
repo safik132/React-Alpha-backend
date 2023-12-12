@@ -165,14 +165,18 @@ const validateTeamHead = (req, res, next) => {
     try {
       const updatedEmployee = await Employee.findByIdAndUpdate(
         req.params.id, 
-        { $set: { lat, lon } }, // Corrected update object
+        { $set: { lat, lon } },
         { new: true }
       );
+      console.log("Updated employee:", updatedEmployee); // Log the updated employee
       res.json(updatedEmployee);
     } catch (error) {
+      console.error('Error updating employee location:', error);
       res.status(500).json({ message: 'Internal Server Error' });
     }
   });
+  
+  
   
   
 {/*----------------------------------------------------------------------- */}
@@ -298,6 +302,33 @@ const validateTeamHead = (req, res, next) => {
     }
   });
       
+// Fetch all employees under a specific team head
+app.get('/api/teamHead/:teamHeadId/employees', async (req, res) => {
+  const teamHeadId = req.params.teamHeadId; // Extract teamHeadId from request parameters
+
+  console.log("Fetching employees for Team Head ID:", teamHeadId);
+
+  try {
+    const employees = await Employee.find({ teamHeadId: teamHeadId });
+    res.json(employees);
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    res.status(500).json({ message: 'Internal Server Error', error });
+  }
+});
+
+// Fetch all employees (for superAdmin)
+// In your server file (e.g., app.js or server.js)
+app.get('/api/superAdmin/allEmployees', async (req, res) => {
+  try {
+      const employees = await Employee.find({}); // Fetches all employees
+      res.json(employees);
+  } catch (error) {
+      console.error('Error fetching all employees:', error);
+      res.status(500).json({ message: 'Internal Server Error', error });
+  }
+});
+
 
 
 const PORT = process.env.PORT || 5000;
