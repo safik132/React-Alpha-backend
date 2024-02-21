@@ -319,19 +319,66 @@ app.get('/api/teamHead/:teamHeadId/employees', async (req, res) => {
 
 // Fetch all employees (for superAdmin)
 // In your server file (e.g., app.js or server.js)
-app.get('/api/superAdmin/allEmployees', async (req, res) => {
+app.get('/api/teamHead/:teamHeadId/employeeLocations', async (req, res) => {
+  const { teamHeadId } = req.params;
+
   try {
-      const employees = await Employee.find({}); // Fetches all employees
-      res.json(employees);
+    const employees = await Employee.find({ teamHeadId: teamHeadId });
+    
+    const response = await Promise.all(employees.map(async (employee) => {
+      // Fetch the most recent punch record for each employee
+      const latestPunch = await PunchRecord.findOne({ employeeId: employee._id })
+        .sort({ punchIn: -1 })
+        .limit(1);
+
+      // Determine if the employee is currently punched in
+      const isPunchedIn = latestPunch && !latestPunch.punchOut;
+
+      return {
+        employeeId: employee._id,
+        username: employee.username,
+        lat: latestPunch ? latestPunch.lat : null,
+        lon: latestPunch ? latestPunch.lon : null,
+        punchInTime: latestPunch ? latestPunch.punchIn : null,
+        punchOutTime: latestPunch ? latestPunch.punchOut : null,
+        isPunchedIn
+      };
+    }));
+
+    res.json(response.filter(item => item.lat && item.lon)); // Filter out any employees without location data
   } catch (error) {
-      console.error('Error fetching all employees:', error);
-      res.status(500).json({ message: 'Internal Server Error', error });
+    console.error('Error fetching employee locations:', error);
+    res.status(500).json({ message: 'Internal Server Error', error });
+  }
+});
+
+// Fetch the latest location for a specific employee
+app.get('/api/employee/location/:userId', async (req, res) => {
+  console.log("Fetching location for userId:", req.params.userId); // Log the userId being requested
+
+  try {
+    const employee = await Employee.findById(req.params.userId, 'lat lon');
+    console.log("Found employee:", employee); // Log the found employee document
+
+    if (!employee) {
+      console.log("No employee found for userId:", req.params.userId);
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    console.log("Sending location for userId:", req.params.userId, "Location:", { lat: employee.lat, lon: employee.lon });
+    res.json({ lat: employee.lat, lon: employee.lon });
+  } catch (error) {
+    console.error('Error fetching employee location:', error);
+    res.status(500).json({ message: 'Internal Server Error', error });
   }
 });
 
 
 
-const PORT = process.env.PORT || 5000;
+
+
+
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
