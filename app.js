@@ -111,7 +111,8 @@ const validateTeamHead = (req, res, next) => {
         token,
         userId: user._id,
         role: role,
-        username: user.username
+        username: user.username,
+        email: user.email 
       };
 
   // Add lat and lon for employee role
@@ -119,6 +120,7 @@ const validateTeamHead = (req, res, next) => {
         response.lat = user.lat;
         response.lon = user.lon;
       }
+      console.log(user); // Add this line before res.json(response); to log the user object
 
       res.json(response);
     });
@@ -373,7 +375,48 @@ app.get('/api/employee/location/:userId', async (req, res) => {
   }
 });
 
+// DELETE account API endpoint
+app.delete('/api/account/delete/:userId', async (req, res) => {
+  const { userId } = req.params; // Assume this is the ID of the user requesting deletion
 
+  // Optional: Check if the user is authorized to delete this account
+  // For example, make sure the userId from the token matches the userId parameter
+  
+  try {
+    // Determine the role of the user
+    let user = await Employee.findById(userId);
+    let role = 'employee';
+    if (!user) {
+      user = await TeamHead.findById(userId);
+      role = user ? user.role : null; // This might be 'teamHead' or 'superAdmin'
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Based on the role, perform the deletion
+    switch(role) {
+      case 'employee':
+        await Employee.findByIdAndDelete(userId);
+        break;
+      case 'teamHead':
+        // Optional: Handle team members before deletion
+        await TeamHead.findByIdAndDelete(userId);
+        break;
+      case 'superAdmin':
+        // Handle superAdmin deletion, if applicable
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid user role' });
+    }
+
+    res.json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
 
