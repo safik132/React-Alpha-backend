@@ -445,7 +445,6 @@ app.post('/api/tokens', async (req, res) => {
 // In your Express app (e.g., index.js or app.js)
 
 app.post('/api/send-notifications', async (req, res) => {
-  // Optionally, you can pass notification details from the request body
   const { title, body } = req.body;
 
   try {
