@@ -21,6 +21,7 @@ const TeamHead = require('./models/TeamHead');
 const Employee = require('./models/Employee');
 const PunchRecord = require('./models/PunchRecord');
 const PushToken = require('./models/PushToken'); // Import the model
+const Notification = require('./models/Notification'); 
 
 const app = express();
 const userRoleMapping = {
@@ -457,6 +458,7 @@ app.post('/api/send-notifications', async (req, res) => {
       data: { withSome: 'data' },
     }));
 
+    // Send notifications
     await axios.post('https://exp.host/--/api/v2/push/send', messages, {
       headers: {
         'Accept': 'application/json',
@@ -464,12 +466,33 @@ app.post('/api/send-notifications', async (req, res) => {
         'Content-Type': 'application/json',
       },
     });
-    res.status(200).json({ message: 'Notifications sent successfully.' });
+
+    // Store notification in the database
+    await new Notification({
+      title,
+      body,
+      data: { withSome: 'data' },
+      tokens: tokens.map(t => t.token) // Store only the tokens
+    }).save();
+
+    res.status(200).json({ message: 'Notifications sent and stored successfully.' });
   } catch (error) {
     console.error('Failed to send notifications:', error);
-    res.status(500).json({ error: 'Failed to send notifications' });
+    res.status(500).json({ error: 'Failed to send and store notifications' });
   }
 });
+
+app.get('/api/notifications', async (req, res) => {
+  try {
+    const notifications = await Notification.find().sort({ createdAt: -1 }); // Get most recent notifications first
+    res.json(notifications);
+  } catch (error) {
+    console.error('Failed to fetch notifications:', error);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+
 
 const PORT = process.env.PORT || 5001;
 
