@@ -7,12 +7,21 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 require("dotenv").config()
+const admin = require('firebase-admin');
+
+const serviceAccount = require('./aces-alpha-897e9-firebase-adminsdk-dm79x-8d3c9329a3.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 
 // Import models
 const TeamHead = require('./models/TeamHead');
 const Employee = require('./models/Employee');
 const PunchRecord = require('./models/PunchRecord');
+const Notification = require('./models/Notifications');
+const User = require('./models/Userschema')
 
 const app = express();
 const userRoleMapping = {
@@ -418,7 +427,75 @@ app.delete('/api/account/delete/:userId', async (req, res) => {
   }
 });
 
+//------------notification---------------------
+// Endpoint to send a notification (You can adjust based on one-to-one or one-to-many)
+app.post('/api/sendNotification', async (req, res) => {
+  const { userIds, title, body } = req.body; // Assuming userIds is an array of user IDs
 
+  try {
+    // Fetch users and their device tokens
+    const users = await User.find({ '_id': { $in: userIds } });
+    const tokens = users.reduce((acc, user) => acc.concat(user.deviceTokens), []);
+
+    if (tokens.length === 0) {
+      return res.status(404).json({ message: 'No device tokens found' });
+    }
+
+    // Prepare a multicast message with the tokens
+    const message = {
+      notification: { title, body },
+      tokens: tokens, // This should be an array of device tokens
+    };
+
+    // Send a message to the devices corresponding to the tokens
+    const response = await admin.messaging().sendMulticast(message);
+
+    // Optionally, log the response or handle failures (tokens not registered, etc.)
+    console.log(response);
+
+    // Save the notification to MongoDB for each user
+    userIds.forEach(async userId => {
+      const notification = new Notification({ userId, title, body });
+      await notification.save();
+    });
+
+    res.status(200).json({ message: 'Notifications sent successfully', successCount: response.successCount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to send notifications', error: error.message });
+  }
+});
+
+
+app.get('/api/fetchNotifications', async (req, res) => {
+  try {
+    const notifications = await Notification.find({});
+    res.json(notifications);
+  } catch (error) {
+    console.error("Failed to fetch notifications:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+// In your backend (Node.js/Express.js)
+app.post('/api/user/deviceToken', async (req, res) => {
+  const { userId, token } = req.body;
+
+  try {
+    // Assuming you have a User model set up with Mongoose
+    const user = await User.findByIdAndUpdate(userId, {
+      $addToSet: { deviceTokens: token }, // Use $addToSet to avoid duplicate tokens
+    }, { new: true });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'Device token updated successfully' });
+  } catch (error) {
+    console.error('Failed to update device token:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
 const PORT = process.env.PORT || 5001;
