@@ -9,11 +9,9 @@ const bcrypt = require('bcrypt');
 require("dotenv").config()
 const admin = require('firebase-admin');
 const axios = require('axios');
-const serviceAccount = require('./aces-alpha-897e9-firebase-adminsdk-dm79x-8d3c9329a3.json');
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+
+
 
 
 // Import models
@@ -21,7 +19,7 @@ const TeamHead = require('./models/TeamHead');
 const Employee = require('./models/Employee');
 const PunchRecord = require('./models/PunchRecord');
 const PushToken = require('./models/PushToken'); // Import the model
-const Notification = require('./models/Notification'); 
+const Notification = require('./models/Notifications'); 
 
 const app = express();
 const userRoleMapping = {
