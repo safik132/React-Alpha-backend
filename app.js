@@ -427,20 +427,29 @@ app.delete('/api/account/delete/:userId', async (req, res) => {
 
 //------------notification---------------------
 app.post('/api/tokens', async (req, res) => {
-  const { userId, token } = req.body;
-  try {
-    // Check if the token already exists for the user
-    const existingToken = await PushToken.findOne({ userId, token });
-    if (!existingToken) {
-      await new PushToken({ userId, token }).save();
-      console.log('Token saved to database');
+    const { userId, token } = req.body;
+    try {
+        // Find the user's existing token
+        const existingToken = await PushToken.findOne({ userId });
+
+        if (existingToken) {
+            // Update the existing token if found
+            existingToken.token = token;
+            await existingToken.save();
+            console.log('Token updated in database');
+        } else {
+            // Create a new record if no existing token was found
+            await new PushToken({ userId, token }).save();
+            console.log('Token saved to database');
+        }
+        
+        res.status(200).send({ message: 'Token received and stored successfully' });
+    } catch (error) {
+        console.error('Error saving or updating token:', error);
+        res.status(500).send({ message: 'Failed to save or update token' });
     }
-    res.status(200).send({ message: 'Token received successfully' });
-  } catch (error) {
-    console.error('Error saving token:', error);
-    res.status(500).send({ message: 'Failed to save token' });
-  }
 });
+
 // In your Express app (e.g., index.js or app.js)
 
 app.post('/api/send-notifications', async (req, res) => {
