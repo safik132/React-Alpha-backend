@@ -436,7 +436,7 @@ app.post('/api/tokens', async (req, res) => {
             // Update the existing token if found
             existingToken.token = token;
             await existingToken.save();
-            console.log('Token updated in database');
+            console.log('Token updated in database ');
         } else {
             // Create a new record if no existing token was found
             await new PushToken({ userId, token }).save();
